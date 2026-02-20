@@ -1,0 +1,53 @@
+from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime
+
+db = SQLAlchemy()
+
+
+# ----------------------------------------
+# USER TABLE
+# ----------------------------------------
+class User(db.Model):
+    __tablename__ = "user"
+
+    user_id      = db.Column(db.Integer, primary_key=True)
+    name         = db.Column(db.String(80))
+    email        = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(200), nullable=False)
+    created_at   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    chats = db.relationship(
+        "ChatSession", backref="user", lazy=True, cascade="all, delete"
+    )
+
+
+# ----------------------------------------
+# CHAT SESSION TABLE
+# ----------------------------------------
+class ChatSession(db.Model):
+    __tablename__ = "chat_session"
+
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey("user.user_id"), nullable=False)
+    title      = db.Column(db.String(200), default="New Chat")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    conversations = db.relationship(
+        "Conversation", backref="chat", lazy=True, cascade="all, delete"
+    )
+
+
+# ----------------------------------------
+# CONVERSATION TABLE
+# ✅ No user_id here — user is tracked via chat_session.user_id
+# ----------------------------------------
+class Conversation(db.Model):
+    __tablename__ = "conversation"
+
+    id          = db.Column(db.Integer, primary_key=True)
+    chat_id     = db.Column(db.Integer, db.ForeignKey("chat_session.id"), nullable=False)
+    question    = db.Column(db.Text, nullable=False)
+    ai_response = db.Column(db.Text, nullable=False)
+    grade       = db.Column(db.String(20))
+    subject     = db.Column(db.String(50))
+    timestamp   = db.Column(db.DateTime, default=datetime.utcnow)

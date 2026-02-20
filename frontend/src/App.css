@@ -1,0 +1,44 @@
+/* App.css – keep GLOBAL styles only */
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+
+.response-card {
+  margin-top: 20px;
+  padding: 15px;
+  background: white;
+  border-radius: 6px;
+}
+
+.loading {
+  margin-top: 10px;
+  font-style: italic;
+}
+/* DEFAULT (DARK) */
+:root {
+  --bg: #0f172a;
+  --panel: #020617;
+  --text: #ffffff;
+  --input: #1e293b;
+  --primary: #4f46e5;
+}
+
+/* LIGHT THEME */
+body[data-theme="light"] {
+  --bg: #f8fafc;
+  --panel: #ffffff;
+  --text: #020617;
+  --input: #e5e7eb;
+  --primary: #4f46e5;
+}
+
+/* APPLY VARIABLES */
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+

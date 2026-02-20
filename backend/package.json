@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@vapi-ai/web": "^2.5.2",
+    "axios": "^1.13.2"
+  }
+}
