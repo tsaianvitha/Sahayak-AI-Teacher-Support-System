@@ -51,3 +51,35 @@ class Conversation(db.Model):
     grade       = db.Column(db.String(20))
     subject     = db.Column(db.String(50))
     timestamp   = db.Column(db.DateTime, default=datetime.utcnow)
+
+# ----------------------------------------
+# FEEDBACK TABLE
+# ----------------------------------------
+
+class SuggestionFeedback(db.Model):
+    __tablename__ = "suggestion_feedback"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("user.user_id"),
+        nullable=False,
+    )
+
+    conversation_id = db.Column(
+        db.Integer,
+        db.ForeignKey("conversation.id"),
+        nullable=False
+    )
+
+    worked = db.Column(db.Boolean, nullable=False)
+
+    rating = db.Column(db.Integer)  # 1–5 scale
+
+    feedback_text = db.Column(db.Text)
+
+    created_at = db.Column(
+        db.DateTime,
+        default=db.func.now()
+    )

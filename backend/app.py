@@ -13,7 +13,7 @@ from gtts import gTTS
 import os
 import base64
 from io import BytesIO
-from models import db, User, Conversation, ChatSession
+from models import db, User, Conversation, ChatSession, SuggestionFeedback
 from service import generate_teacher_response
 
 load_dotenv()
@@ -40,7 +40,7 @@ def add_cors_headers(response):
 # DATABASE
 # ----------------------------------------
 app.config["SQLALCHEMY_DATABASE_URI"] = \
-    "mysql+pymysql://root:ASt14%4020@localhost:3306/sahayak_ai"
+    "mysql+pymysql://root:Ad1t1.2k5@localhost:3306/sahayak_ai"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "super-secret")
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
@@ -173,7 +173,8 @@ def ask_ai():
 
     return jsonify({
         "response": ai_response,
-        "chat_id": chat_id
+        "chat_id": chat_id,
+        "conversation_id": conversation.id,
     })
 
 @app.route("/tts", methods=["POST"])
@@ -232,14 +233,17 @@ def get_conversations(chat_id):
         chat_id=chat_id
     ).order_by(Conversation.timestamp.asc()).all()
 
-    return jsonify([
-        {
-            "question": c.question,
-            "response": c.ai_response,
-            "time": c.timestamp.isoformat()
-        }
-        for c in conversations
-    ])
+    return jsonify(
+        [
+            {
+                "id": c.id,
+                "question": c.question,
+                "response": c.ai_response,
+                "time": c.timestamp.isoformat(),
+            }
+            for c in conversations
+        ]
+    )
 
 # ----------------------------------------
 # STATS
@@ -278,6 +282,35 @@ def update_chat_title(chat_id):
         chat.title = title[:200]
         db.session.commit()
     return jsonify({"msg": "Updated", "title": chat.title})
+
+
+# ----------------------------------------
+# FEEDBACK
+# ----------------------------------------
+
+@app.route("/feedback/<int:conversation_id>", methods=["POST"])
+@jwt_required()
+def submit_feedback(conversation_id):
+    user_id = int(get_jwt_identity())
+
+    conversation = Conversation.query.get(conversation_id)
+    if not conversation:
+        return jsonify({"msg": "Conversation not found"}), 404
+
+    data = request.get_json()
+
+    feedback = SuggestionFeedback(
+        user_id=user_id,
+        conversation_id=conversation_id,
+        worked=data["worked"],
+        rating=data.get("rating"),
+        feedback_text=data.get("feedback_text")
+    )
+
+    db.session.add(feedback)
+    db.session.commit()
+
+    return jsonify({"msg": "Feedback stored"}), 201
 
 # ----------------------------------------
 # RUN

@@ -1,7 +1,13 @@
 import "../styles/assistant.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { askAI, getChats, createChat, getConversations } from "../services/api";
+import {
+  askAI,
+  getChats,
+  createChat,
+  getConversations,
+  submitFeedback,
+} from "../services/api";
 import api from "../services/api";
 
 const langMap = {
@@ -21,21 +27,19 @@ export default function Assistant() {
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [message, setMessage] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
+  const [feedbackState, setFeedbackState] = useState({});
 
-  // Sidebar sessions from DB: [{ id, title }]
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [loadingChats, setLoadingChats] = useState(true);
-  const [loadingMessages, setLoadingMessages] = useState(false);
 
   const chatEndRef = useRef(null);
-  const recognitionRef = useRef(null);
 
-  /* ── AUTH CHECK ── */
+  /* AUTH CHECK */
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     const profile = localStorage.getItem("profile");
@@ -43,43 +47,35 @@ export default function Assistant() {
     if (!profile) navigate("/profile-setup");
   }, [navigate]);
 
-  /* ── LOAD ALL CHATS FROM DB ON MOUNT ── */
   useEffect(() => {
     loadChats();
   }, []);
 
-  /* ── AUTO SCROLL ── */
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory]);
 
-  /* ─────────────────────────────────────────
-     DB HELPERS
-  ───────────────────────────────────────── */
-
   const makeWelcomeMsg = () => ({
     type: "bot",
-    sender: "Bot",
-    text: `Hello ${name} 👋 I'm your teaching assistant. How can I help you today?`,
-    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    sender: "AI Mentor",
+    text: `Hello ${name} 👋 I'm your AI teaching mentor. How can I assist you today?`,
+    time: new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
   });
 
   const loadChats = async () => {
     try {
-      setLoadingChats(true);
-      const chats = await getChats(); // returns [{ id, title }]
+      const chats = await getChats();
       setSessions(chats);
 
       if (chats.length > 0) {
-        // Resume last active session the user was on
-        const lastId = parseInt(localStorage.getItem("activeChatId"));
-        const target = chats.find((c) => c.id === lastId) || chats[0];
-        await openSession(target.id, chats);
+        await openSession(chats[0].id);
       } else {
         setChatHistory([makeWelcomeMsg()]);
       }
-    } catch (err) {
-      console.error("Failed to load chats:", err);
+    } catch {
       setChatHistory([makeWelcomeMsg()]);
     } finally {
       setLoadingChats(false);
@@ -88,58 +84,51 @@ export default function Assistant() {
 
   const openSession = async (chatId) => {
     try {
-      setLoadingMessages(true);
       setActiveSessionId(chatId);
-      localStorage.setItem("activeChatId", chatId);
+      const convos = await getConversations(chatId);
 
-      const convos = await getConversations(chatId); // [{ question, response, time }]
-
-      if (convos.length === 0) {
+      if (!convos.length) {
         setChatHistory([makeWelcomeMsg()]);
-      } else {
-        // Rebuild message pairs from DB
-        const history = [];
-        convos.forEach((c) => {
-          history.push({
-            type: "user",
-            sender: name,
-            text: c.question,
-            time: new Date(c.time).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          });
-          history.push({
-            type: "bot",
-            sender: "Bot",
-            text: c.response,
-            time: new Date(c.time).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          });
-        });
-        setChatHistory(history);
+        return;
       }
-    } catch (err) {
-      console.error("Failed to load conversations:", err);
+
+      const history = [];
+      convos.forEach((c) => {
+        const formattedTime = new Date(c.time).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+
+        history.push({
+          type: "user",
+          sender: name,
+          text: c.question,
+          time: formattedTime,
+        });
+
+        history.push({
+          type: "bot",
+          sender: "AI Mentor",
+          text: c.response,
+          time: formattedTime,
+          conversationId: c.id,
+        });
+      });
+
+      setChatHistory(history);
+    } catch {
       setChatHistory([makeWelcomeMsg()]);
-    } finally {
-      setLoadingMessages(false);
     }
   };
 
   const handleNewChat = async () => {
-    try {
-      const newChat = await createChat(); // { id }
-      const newSession = { id: newChat.id, title: "New Chat" };
-      setSessions((prev) => [newSession, ...prev]);
-      setActiveSessionId(newChat.id);
-      localStorage.setItem("activeChatId", newChat.id);
-      setChatHistory([makeWelcomeMsg()]);
-    } catch (err) {
-      console.error("Failed to create chat:", err);
-    }
+    const newChat = await createChat();
+    setSessions((prev) => [
+      { id: newChat.id, title: "New Chat" },
+      ...prev,
+    ]);
+    setActiveSessionId(newChat.id);
+    setChatHistory([makeWelcomeMsg()]);
   };
 
   const handleDeleteSession = async (e, chatId) => {
@@ -151,40 +140,30 @@ export default function Assistant() {
 
       if (chatId === activeSessionId) {
         if (remaining.length > 0) {
-          await openSession(remaining[0].id);
+          openSession(remaining[0].id);
         } else {
           setActiveSessionId(null);
-          localStorage.removeItem("activeChatId");
           setChatHistory([makeWelcomeMsg()]);
         }
       }
     } catch (err) {
-      console.error("Failed to delete chat:", err);
+      console.error(err);
     }
   };
-
-  /* ─────────────────────────────────────────
-     SEND MESSAGE
-  ───────────────────────────────────────── */
 
   const handleSend = async () => {
     const trimmed = message.trim();
     if (!trimmed) return;
 
-    // Create a session if none is active
     let chatId = activeSessionId;
     if (!chatId) {
-      try {
-        const newChat = await createChat();
-        chatId = newChat.id;
-        const newSession = { id: chatId, title: trimmed.slice(0, 40) };
-        setSessions((prev) => [newSession, ...prev]);
-        setActiveSessionId(chatId);
-        localStorage.setItem("activeChatId", chatId);
-      } catch (err) {
-        console.error("Failed to create chat:", err);
-        return;
-      }
+      const newChat = await createChat();
+      chatId = newChat.id;
+      setActiveSessionId(chatId);
+      setSessions((prev) => [
+        { id: chatId, title: trimmed.slice(0, 40) },
+        ...prev,
+      ]);
     }
 
     const now = new Date().toLocaleTimeString([], {
@@ -192,59 +171,45 @@ export default function Assistant() {
       minute: "2-digit",
     });
 
-    const userMsg = { type: "user", sender: name, text: trimmed, time: now };
-    setChatHistory((prev) => [...prev, userMsg]);
+    setChatHistory((prev) => [
+      ...prev,
+      { type: "user", sender: name, text: trimmed, time: now },
+    ]);
+
     setMessage("");
     setIsTyping(true);
 
     try {
       const profile = JSON.parse(localStorage.getItem("profile") || "{}");
-      const grade = profile?.grade || "General";
-      const subject = profile?.subject || "Teaching";
-
-      // Send chat_id so backend saves conversation in the right session
-      const res = await askAI(grade, subject, trimmed, language, chatId);
-      const botText = res.response || "No response generated.";
-
-      // Sync if backend assigned a new chat_id
-      if (res.chat_id && res.chat_id !== chatId) {
-        chatId = res.chat_id;
-        setActiveSessionId(chatId);
-        localStorage.setItem("activeChatId", chatId);
-      }
-
-      const botMsg = {
-        type: "bot",
-        sender: "Bot",
-        text: botText,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      };
-
-      setChatHistory((prev) => [...prev, botMsg]);
-
-      // Set sidebar title from first user message
-      setSessions((prev) =>
-        prev.map((s) =>
-          s.id === chatId && s.title === "New Chat"
-            ? { ...s, title: trimmed.slice(0, 40) }
-            : s
-        )
+      const res = await askAI(
+        profile?.grade || "General",
+        profile?.subject || "Teaching",
+        trimmed,
+        language,
+        chatId
       );
-    } catch (err) {
-      console.error("AI Error:", err);
+
       setChatHistory((prev) => [
         ...prev,
         {
           type: "bot",
-          sender: "Bot",
-          text: "AI service error. Please try again.",
+          sender: "AI Mentor",
+          text: res.response,
           time: new Date().toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",
           }),
+          conversationId: res.conversation_id,
+        },
+      ]);
+    } catch {
+      setChatHistory((prev) => [
+        ...prev,
+        {
+          type: "bot",
+          sender: "AI Mentor",
+          text: "AI error. Try again.",
+          time: now,
         },
       ]);
     } finally {
@@ -252,40 +217,25 @@ export default function Assistant() {
     }
   };
 
-  /* ── VOICE INPUT ── */
-  const toggleRecording = () => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+  const handleFeedbackSubmit = async (conversationId) => {
+    const current = feedbackState[conversationId];
+    if (!current?.rating) return;
 
-    if (!SpeechRecognition) {
-      alert("Speech recognition not supported in this browser");
-      return;
-    }
+    await submitFeedback(conversationId, {
+      worked: current.rating >= 3,
+      rating: current.rating,
+      comment: current.comment,
+    });
 
-    if (isRecording) {
-      recognitionRef.current?.stop();
-      setIsRecording(false);
-      return;
-    }
-
-    recognitionRef.current = new SpeechRecognition();
-    recognitionRef.current.lang = langMap[language] || "en-US";
-    recognitionRef.current.onresult = (event) => {
-      setMessage(event.results[0][0].transcript);
-    };
-    recognitionRef.current.onerror = () => setIsRecording(false);
-    recognitionRef.current.start();
-    setIsRecording(true);
+    setFeedbackState((prev) => ({
+      ...prev,
+      [conversationId]: { ...current, submitted: true },
+    }));
   };
 
-  /* ─────────────────────────────────────────
-     RENDER
-  ───────────────────────────────────────── */
-
   return (
-    <div className="assistant-layout">
+    <div className={`assistant-layout ${sidebarOpen ? "" : "collapsed"}`}>
 
-      {/* SIDEBAR */}
       <div className="chat-sidebar">
         <div className="sidebar-header">
           <h3>Chats</h3>
@@ -295,45 +245,42 @@ export default function Assistant() {
         </div>
 
         <div className="session-list">
-          {loadingChats ? (
-            <div className="session-loading">Loading chats...</div>
-          ) : sessions.length === 0 ? (
-            <div className="session-empty">No chats yet</div>
-          ) : (
-            sessions.map((session) => (
-              <div
-                key={session.id}
-                className={`session-item ${session.id === activeSessionId ? "active" : ""}`}
-                onClick={() => openSession(session.id)}
+          {sessions.map((session) => (
+            <div
+              key={session.id}
+              className={`session-item ${
+                session.id === activeSessionId ? "active" : ""
+              }`}
+              onClick={() => openSession(session.id)}
+            >
+              <span className="session-title">{session.title}</span>
+              <button
+                className="delete-session-btn"
+                onClick={(e) => handleDeleteSession(e, session.id)}
               >
-                <span className="session-icon">💬</span>
-                <span className="session-title">{session.title}</span>
-                <button
-                  className="delete-session-btn"
-                  onClick={(e) => handleDeleteSession(e, session.id)}
-                  title="Delete chat"
-                >
-                  ✕
-                </button>
-              </div>
-            ))
-          )}
+                ✕
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* MAIN */}
       <div className="assistant-main">
 
-        {/* TOP NAV */}
         <header className="top-nav">
           <div className="nav-left">
+          <button
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen((prev) => !prev)}
+          >
+            ☰
+          </button>
             <div className="logo">🎓</div>
             <div>
-              <strong>TeachAssist</strong>
-              <span>Empowering Teachers Everywhere</span>
+              <strong>TeachAssist AI Mentor</strong>
+              <span>Adaptive Classroom Support</span>
             </div>
           </div>
-
           <div className="nav-right">
             <select
               value={language}
@@ -344,29 +291,19 @@ export default function Assistant() {
                 <option key={lang}>{lang}</option>
               ))}
             </select>
-
-            <button className="nav-btn active">💬 Assistant</button>
-            <button className="nav-btn" onClick={() => navigate("/profile")}>
-              👤 Profile
-            </button>
-
-            <div className="divider" />
             <div className="user-name">{name}</div>
           </div>
         </header>
 
-        {/* SCROLLABLE CONTENT */}
         <div className="scrollable-content">
-
           <div className="assistant-header">
-            <div>🤖</div>
+            <div>✨</div>
             <div>
-              <h2>Teaching Assistant</h2>
-              <p>Ask me anything about teaching</p>
+              <h2>Hi {name}, let's improve your classroom impact</h2>
+              <p>Your feedback helps personalize future suggestions.</p>
             </div>
           </div>
-
-          {/* QUICK TOPICS — only on fresh/empty chat */}
+          
           {chatHistory.length === 1 && (
             <div className="topics">
               {[
@@ -377,7 +314,11 @@ export default function Assistant() {
                 "Can you help me create an engaging lesson plan?",
                 "How can I manage my teaching time more effectively?",
               ].map((q, i) => (
-                <div key={i} className="topic" onClick={() => setMessage(q)}>
+                <div
+                  key={i}
+                  className="topic"
+                  onClick={() => setMessage(q)}
+                >
                   <h4>{q.split("?")[0]}</h4>
                   <p>{q}</p>
                 </div>
@@ -385,66 +326,105 @@ export default function Assistant() {
             </div>
           )}
 
-          {/* CHAT AREA */}
           <div className="chat-area">
             <div className="chat">
-              {loadingMessages ? (
-                <div className="bot-msg">Loading conversation...</div>
-              ) : (
-                chatHistory.map((msg, index) => (
-                  <div key={index} className="chat-block">
-                    <div className="message-wrapper">
-                      <div className={msg.type === "bot" ? "bot-msg" : "user-msg"}>
-                        {msg.text}
-                      </div>
-                    </div>
-                    <small>
-                      <strong>{msg.sender}</strong> · {msg.time}
-                    </small>
+              {chatHistory.map((msg, index) => (
+                <div key={index} className="chat-block">
+                  <div className={msg.type === "bot" ? "bot-msg" : "user-msg"}>
+                    {msg.text}
                   </div>
-                ))
-              )}
+
+                  <small>
+                    <strong>{msg.sender}</strong> · {msg.time}
+                  </small>
+
+                  {msg.type === "bot" && msg.conversationId && (
+                    <div className="feedback-card">
+                      {feedbackState[msg.conversationId]?.submitted ? (
+                        <div className="feedback-success">
+                          ✅ Thanks! I’ll adapt.
+                        </div>
+                      ) : (
+                        <>
+                          <div className="feedback-question">
+                            Rate this suggestion:
+                          </div>
+
+                          <div className="rating-buttons">
+                            {[1,2,3,4,5].map((n) => (
+                              <button
+                                key={n}
+                                className={`rating-btn ${
+                                  feedbackState[msg.conversationId]?.rating === n
+                                    ? "active"
+                                    : ""
+                                }`}
+                                onClick={() =>
+                                  setFeedbackState((prev) => ({
+                                    ...prev,
+                                    [msg.conversationId]: {
+                                      ...(prev[msg.conversationId] || {}),
+                                      rating: n,
+                                    },
+                                  }))
+                                }
+                              >
+                                {n}
+                              </button>
+                            ))}
+                          </div>
+
+                          <textarea
+                            placeholder="Optional comment"
+                            value={
+                              feedbackState[msg.conversationId]?.comment || ""
+                            }
+                            onChange={(e) =>
+                              setFeedbackState((prev) => ({
+                                ...prev,
+                                [msg.conversationId]: {
+                                  ...(prev[msg.conversationId] || {}),
+                                  comment: e.target.value,
+                                },
+                              }))
+                            }
+                          />
+
+                          <button
+                            className="submit-feedback-btn"
+                            onClick={() =>
+                              handleFeedbackSubmit(msg.conversationId)
+                            }
+                          >
+                            Submit
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+
               {isTyping && (
-                <div className="bot-msg typing-indicator">Typing...</div>
+                <div className="bot-msg">Analyzing classroom context...</div>
               )}
+
               <div ref={chatEndRef} />
             </div>
           </div>
-
         </div>
 
-        {/* INPUT */}
         <div className="chat-input">
           <input
-            placeholder="Type your message..."
+            placeholder="Describe your classroom situation..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
-
-          <button
-            className={`mic ${isRecording ? "recording" : ""}`}
-            onClick={toggleRecording}
-            title="Voice input"
-          >
-            🎤
-          </button>
-
-          <button className="send" onClick={handleSend} title="Send message">
+          <button className="send" onClick={handleSend}>
             ➤
           </button>
-
-          <button
-            className="nav-btn"
-            onClick={() => {
-              localStorage.clear();
-              navigate("/login");
-            }}
-          >
-            🚪 Logout
-          </button>
         </div>
-
       </div>
     </div>
   );

@@ -43,6 +43,12 @@ export const getConversations = async (chatId) => {
   return res.data;
 };
 
+// ---------------- FEEDBACK ----------------
+export const submitFeedback = async (conversationId, payload) => {
+  const res = await api.post(`/feedback/${conversationId}`, payload);
+  return res.data;
+};
+
 // ---------------- ASK AI ----------------
 // ✅ Parameter order matches Assistant.jsx: askAI(grade, subject, userMessage, language)
 export const askAI = async (grade, subject, question, language, chat_id = null) => {
