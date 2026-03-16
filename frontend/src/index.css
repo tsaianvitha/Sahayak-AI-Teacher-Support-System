@@ -9,3 +9,8 @@ body {
   background: #ffffff;
   color: #0f172a;
 }
+/* Default — all pages can scroll */
+body {
+  overflow-y: auto;
+  overflow-x: hidden;
+}

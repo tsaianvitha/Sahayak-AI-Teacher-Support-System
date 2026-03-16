@@ -1,0 +1,417 @@
+/* ============================================
+   BEHAVIOUR COACH — behaviour.css
+============================================ */
+
+@media print {
+  .no-print { display: none !important; }
+  .bc-page  { padding: 0; background: white; }
+  .bc-plan  { box-shadow: none; border: none; }
+  .bc-step-card { break-inside: avoid; }
+}
+
+.bc-page {
+  min-height: 100vh;
+  background: #f3f4f6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding-bottom: 60px;
+}
+
+/* ── TOPBAR ── */
+.bc-topbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.bc-back-btn, .bc-print-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #374151;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.bc-back-btn:hover, .bc-print-btn:hover { background: #f3f4f6; }
+
+.bc-topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+.bc-icon { font-size: 28px; }
+.bc-topbar-title strong { font-size: 16px; display: block; color: #111827; }
+.bc-topbar-title span   { font-size: 12px; color: #6b7280; }
+
+/* ── BODY ── */
+.bc-body {
+  max-width: 860px;
+  margin: 28px auto 0;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── INPUT PANEL ── */
+.bc-input-panel {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 28px 30px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+
+.bc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.bc-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.bc-field textarea,
+.bc-field input,
+.bc-field select {
+  padding: 10px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  transition: border-color .2s;
+  background: white;
+  color: #111827;
+}
+.bc-field textarea:focus,
+.bc-field input:focus,
+.bc-field select:focus { border-color: #4f46e5; }
+
+.bc-charcount {
+  font-size: 11px;
+  color: #9ca3af;
+  text-align: right;
+}
+
+/* ── CHIPS ── */
+.bc-chips-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.bc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.bc-chip {
+  background: white;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  padding: 6px 13px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s;
+  text-align: left;
+}
+.bc-chip:hover { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; }
+.bc-chip.active { border-color: #4f46e5; background: #eef2ff; color: #4f46e5; font-weight: 500; }
+
+/* ── FORM ROW ── */
+.bc-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 4px;
+}
+.bc-form-row .bc-field { margin-bottom: 0; }
+
+/* ── ERROR ── */
+.bc-error {
+  color: #ef4444;
+  font-size: 13px;
+  background: #fee2e2;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+/* ── SUBMIT ── */
+.bc-submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s;
+  margin-top: 8px;
+}
+.bc-submit-btn:hover:not(:disabled) { opacity: .92; transform: translateY(-1px); }
+.bc-submit-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── LOADING ── */
+.bc-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 40px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+.bc-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: bc-spin .8s linear infinite;
+}
+@keyframes bc-spin { to { transform: rotate(360deg); } }
+
+/* ── PLAN WRAPPER ── */
+.bc-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── PLAN HEADER ── */
+.bc-plan-header {
+  background: white;
+  border-radius: 14px;
+  padding: 24px 28px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.bc-plan-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.bc-plan-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  flex: 1;
+}
+
+.bc-severity-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+.bc-severity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.bc-plan-problem {
+  font-size: 14px;
+  color: #6b7280;
+  font-style: italic;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── QUICK TIP ── */
+.bc-quick-tip {
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.bc-quick-tip-icon { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+.bc-quick-tip strong { font-size: 13px; color: #92400e; display: block; margin-bottom: 4px; }
+.bc-quick-tip p { margin: 0; font-size: 14px; color: #78350f; line-height: 1.5; }
+
+/* ── STEP CARDS ── */
+.bc-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bc-step-card {
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  border-left: 4px solid var(--step-color);
+}
+
+.bc-step-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.bc-step-num {
+  background: var(--step-color);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.bc-step-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.bc-step-body {
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bc-step-section { display: flex; flex-direction: column; gap: 5px; }
+
+.bc-step-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #9ca3af;
+}
+
+.bc-step-section p {
+  margin: 0;
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.6;
+}
+
+.bc-why {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.bc-why .bc-step-section-label { color: #6b7280; }
+.bc-why p { color: #6b7280; font-size: 13px; }
+
+.bc-script-section {}
+.bc-script-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.bc-copy-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all .15s;
+}
+.bc-copy-btn:hover { border-color: #4f46e5; color: #4f46e5; }
+.bc-copy-btn.copied { border-color: #16a34a; color: #16a34a; }
+
+.bc-script {
+  margin: 0;
+  padding: 12px 16px;
+  background: #eef2ff;
+  border-left: 3px solid #4f46e5;
+  border-radius: 0 8px 8px 0;
+  font-size: 14px;
+  font-style: italic;
+  color: #3730a3;
+  line-height: 1.6;
+}
+
+/* ── ESCALATION ── */
+.bc-escalate {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.bc-escalate-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+.bc-escalate strong { font-size: 13px; color: #991b1b; display: block; margin-bottom: 4px; }
+.bc-escalate p { margin: 0; font-size: 14px; color: #7f1d1d; line-height: 1.5; }
+
+/* ── PLAN FOOTER ── */
+.bc-plan-actions {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 8px;
+}
+
+.bc-new-btn {
+  padding: 11px 22px;
+  background: white;
+  border: 1.5px solid #e5e7eb;
+  color: #374151;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s;
+}
+.bc-new-btn:hover { background: #f3f4f6; }
+
+.bc-print-btn-lg {
+  padding: 11px 22px;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.bc-print-btn-lg:hover { opacity: .9; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .bc-input-panel { padding: 20px 18px; }
+  .bc-form-row { grid-template-columns: 1fr; }
+  .bc-step-body { padding: 14px 16px; }
+  .bc-step-header { padding: 14px 16px 10px; }
+  .bc-body { margin-top: 16px; }
+}

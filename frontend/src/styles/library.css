@@ -1,0 +1,321 @@
+/* ============================================
+   RESOURCE LIBRARY — library.css
+============================================ */
+
+.rl-page {
+  min-height: 100vh;
+  background: #f3f4f6;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding-bottom: 60px;
+}
+
+/* ── TOPBAR ── */
+.rl-topbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.rl-back-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #374151;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.rl-back-btn:hover { background: #f3f4f6; }
+
+.rl-topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+.rl-icon { font-size: 28px; }
+.rl-topbar-title strong { font-size: 16px; display: block; color: #111827; }
+.rl-topbar-title span   { font-size: 12px; color: #6b7280; }
+
+.rl-count-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4f46e5;
+  background: #eef2ff;
+  padding: 4px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ── BODY ── */
+.rl-body {
+  max-width: 900px;
+  margin: 28px auto 0;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── FILTERS ── */
+.rl-filters {
+  background: white;
+  border-radius: 14px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+}
+
+.rl-search {
+  padding: 10px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.rl-search:focus { border-color: #4f46e5; }
+
+.rl-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rl-filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.rl-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rl-pill {
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all .15s;
+  font-weight: 500;
+}
+.rl-pill:hover  { border-color: #4f46e5; color: #4f46e5; }
+.rl-pill.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+
+/* ── STATES ── */
+.rl-error {
+  background: #fee2e2;
+  color: #ef4444;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.rl-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 48px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.rl-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: rl-spin .8s linear infinite;
+}
+@keyframes rl-spin { to { transform: rotate(360deg); } }
+
+.rl-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+.rl-empty-icon { font-size: 48px; margin-bottom: 16px; }
+.rl-empty h3   { font-size: 18px; color: #111827; margin: 0 0 8px; }
+.rl-empty p    { font-size: 14px; line-height: 1.6; max-width: 380px; margin: 0 auto 20px; }
+
+.rl-goto-btn {
+  padding: 10px 24px;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── GROUPS ── */
+.rl-group { display: flex; flex-direction: column; gap: 10px; }
+
+.rl-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rl-group-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+.rl-group-count {
+  font-size: 12px;
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* ── CARDS ── */
+.rl-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rl-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  transition: border-color .15s, box-shadow .15s;
+}
+.rl-card:hover       { border-color: #c7d2fe; box-shadow: 0 2px 12px rgba(79,70,229,.08); }
+.rl-card.expanded    { border-color: #4f46e5; }
+
+.rl-card-top {
+  padding: 16px 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.rl-card-meta {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.rl-tag-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+}
+
+.rl-grade-badge {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.rl-card-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #111827;
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+
+.rl-card-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rl-card-date {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.rl-expand-icon {
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+/* ── EXPANDED CONTENT ── */
+.rl-card-body {
+  border-top: 1px solid #f3f4f6;
+  padding: 16px 20px;
+}
+
+.rl-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: inherit;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.7;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 14px 16px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0 0 12px;
+}
+
+.rl-card-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.rl-copy-btn {
+  padding: 7px 16px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #374151;
+  transition: all .15s;
+}
+.rl-copy-btn:hover  { border-color: #4f46e5; color: #4f46e5; }
+.rl-copy-btn.copied { border-color: #16a34a; color: #16a34a; }
+
+.rl-delete-btn {
+  padding: 7px 16px;
+  background: white;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #ef4444;
+  transition: all .15s;
+}
+.rl-delete-btn:hover:not(:disabled) { background: #fee2e2; }
+.rl-delete-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .rl-topbar { padding: 14px 16px; }
+  .rl-body   { margin-top: 16px; }
+  .rl-filters { padding: 16px; }
+  .rl-card-top { padding: 14px 16px; }
+}

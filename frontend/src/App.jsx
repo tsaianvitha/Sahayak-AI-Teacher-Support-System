@@ -6,6 +6,10 @@ import Signup from "./pages/Signup";
 import ProfileSetup from "./pages/ProfileSetup";
 import Assistant from "./pages/Assistant";
 import Profile from "./pages/Profile";
+import QuizGenerator from "./pages/QuizGenerator";
+import BehaviourCoach from "./pages/BehaviourCoach";
+import ResourceLibrary from "./pages/ResourceLibrary";
+
 
 /* ================= ROUTE GUARDS ================= */
 
@@ -104,7 +108,9 @@ export default function App() {
           </ProfileRoute>
         }
       />
-
+      <Route path="/quiz" element={<QuizGenerator />} />
+      <Route path="/behaviour-coach" element={<BehaviourCoach />} />
+      <Route path="/library" element={<ResourceLibrary />} />
       {/* ===== FALLBACK ===== */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

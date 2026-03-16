@@ -83,3 +83,18 @@ class SuggestionFeedback(db.Model):
         db.DateTime,
         default=db.func.now()
     )
+
+class SavedResource(db.Model):
+    __tablename__ = "saved_resource"
+
+    id              = db.Column(db.Integer, primary_key=True)
+    user_id         = db.Column(db.Integer, db.ForeignKey("user.user_id"), nullable=False)
+    title           = db.Column(db.String(200), nullable=False)
+    content         = db.Column(db.Text, nullable=False)
+    tag             = db.Column(db.String(50), nullable=False)   # lesson-plan, quiz, worksheet, tip, other
+    subject         = db.Column(db.String(100), default="General")
+    grade           = db.Column(db.String(50),  default="")
+    source          = db.Column(db.String(50),  default="assistant")  # assistant | quiz | behaviour | worksheet
+    created_at      = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship("User", backref=db.backref("saved_resources", lazy=True))

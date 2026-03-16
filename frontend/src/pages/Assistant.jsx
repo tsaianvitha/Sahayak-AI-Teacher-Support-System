@@ -1,4 +1,5 @@
 import "../styles/assistant.css";
+import SaveButton from "../components/SaveButton";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import {
@@ -20,6 +21,7 @@ const langMap = {
 };
 
 export default function Assistant() {
+
   const { state } = useLocation();
   const name = state?.name || localStorage.getItem("userName") || "Teacher";
   const navigate = useNavigate();
@@ -27,19 +29,19 @@ export default function Assistant() {
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   const [message, setMessage] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [feedbackState, setFeedbackState] = useState({});
-
   const [sessions, setSessions] = useState([]);
   const [activeSessionId, setActiveSessionId] = useState(null);
-  const [loadingChats, setLoadingChats] = useState(true);
+  const [feedbackState, setFeedbackState] = useState({});
+  const [isTyping, setIsTyping] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
 
   const chatEndRef = useRef(null);
 
-  /* AUTH CHECK */
+  /* ── AUTH CHECK ── */
+
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     const profile = localStorage.getItem("profile");
@@ -47,40 +49,48 @@ export default function Assistant() {
     if (!profile) navigate("/profile-setup");
   }, [navigate]);
 
+  /* ── LOAD CHATS ── */
+
   useEffect(() => {
     loadChats();
   }, []);
+
+  /* ── AUTO SCROLL ── */
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatHistory]);
 
+  /* ── HELPERS ── */
+
   const makeWelcomeMsg = () => ({
     type: "bot",
-    sender: "AI Mentor",
-    text: `Hello ${name} 👋 I'm your AI teaching mentor. How can I assist you today?`,
-    time: new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    sender: "Bot",
+    text: `Hello ${name} 👋 I'm your teaching assistant. How can I help you today?`,
+    suggestions: [],
+    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
   });
+
+  const getProfile = () =>
+    JSON.parse(localStorage.getItem("profile") || "{}");
+
+  /* ── LOAD CHAT LIST ── */
 
   const loadChats = async () => {
     try {
       const chats = await getChats();
       setSessions(chats);
-
       if (chats.length > 0) {
-        await openSession(chats[0].id);
+        openSession(chats[0].id);
       } else {
         setChatHistory([makeWelcomeMsg()]);
       }
     } catch {
       setChatHistory([makeWelcomeMsg()]);
-    } finally {
-      setLoadingChats(false);
     }
   };
+
+  /* ── OPEN SESSION ── */
 
   const openSession = async (chatId) => {
     try {
@@ -94,23 +104,17 @@ export default function Assistant() {
 
       const history = [];
       convos.forEach((c) => {
-        const formattedTime = new Date(c.time).toLocaleTimeString([], {
+        const time = new Date(c.time).toLocaleTimeString([], {
           hour: "2-digit",
           minute: "2-digit",
         });
-
-        history.push({
-          type: "user",
-          sender: name,
-          text: c.question,
-          time: formattedTime,
-        });
-
+        history.push({ type: "user", sender: name, text: c.question, time });
         history.push({
           type: "bot",
-          sender: "AI Mentor",
+          sender: "Bot",
           text: c.response,
-          time: formattedTime,
+          suggestions: [],   // old messages have no saved suggestions
+          time,
           conversationId: c.id,
         });
       });
@@ -121,41 +125,39 @@ export default function Assistant() {
     }
   };
 
+  /* ── NEW CHAT ── */
+
   const handleNewChat = async () => {
     const newChat = await createChat();
-    setSessions((prev) => [
-      { id: newChat.id, title: "New Chat" },
-      ...prev,
-    ]);
+    setSessions((prev) => [{ id: newChat.id, title: "New Chat" }, ...prev]);
     setActiveSessionId(newChat.id);
     setChatHistory([makeWelcomeMsg()]);
   };
 
+  /* ── DELETE CHAT ── */
+
   const handleDeleteSession = async (e, chatId) => {
     e.stopPropagation();
-    try {
-      await api.delete(`/chats/${chatId}`);
-      const remaining = sessions.filter((s) => s.id !== chatId);
-      setSessions(remaining);
-
-      if (chatId === activeSessionId) {
-        if (remaining.length > 0) {
-          openSession(remaining[0].id);
-        } else {
-          setActiveSessionId(null);
-          setChatHistory([makeWelcomeMsg()]);
-        }
+    await api.delete(`/chats/${chatId}`);
+    const remaining = sessions.filter((s) => s.id !== chatId);
+    setSessions(remaining);
+    if (chatId === activeSessionId) {
+      if (remaining.length > 0) {
+        openSession(remaining[0].id);
+      } else {
+        setActiveSessionId(null);
+        setChatHistory([makeWelcomeMsg()]);
       }
-    } catch (err) {
-      console.error(err);
     }
   };
 
-  const handleSend = async () => {
-    const trimmed = message.trim();
+  /* ── CORE SEND LOGIC (accepts text directly) ── */
+
+  const sendMessage = async (trimmed) => {
     if (!trimmed) return;
 
     let chatId = activeSessionId;
+
     if (!chatId) {
       const newChat = await createChat();
       chatId = newChat.id;
@@ -176,55 +178,79 @@ export default function Assistant() {
       { type: "user", sender: name, text: trimmed, time: now },
     ]);
 
-    setMessage("");
     setIsTyping(true);
 
     try {
-      const profile = JSON.parse(localStorage.getItem("profile") || "{}");
+      const profile = getProfile();
+
       const res = await askAI(
-        profile?.grade || "General",
-        profile?.subject || "Teaching",
+        profile?.grade      || "General",
+        profile?.subjects   || "Teaching",
         trimmed,
         language,
-        chatId
+        chatId,
+        profile?.experience || "",
+        profile?.challenges || "",
+        profile?.location   || ""
       );
 
       setChatHistory((prev) => [
         ...prev,
         {
-          type: "bot",
-          sender: "AI Mentor",
-          text: res.response,
-          time: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          type:           "bot",
+          sender:         "Bot",
+          text:           res.response,
+          suggestions:    res.suggestions || [],
+          time:           new Date().toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }),
           conversationId: res.conversation_id,
         },
       ]);
+
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === chatId && s.title === "New Chat"
+            ? { ...s, title: trimmed.slice(0, 40) }
+            : s
+        )
+      );
     } catch {
       setChatHistory((prev) => [
         ...prev,
-        {
-          type: "bot",
-          sender: "AI Mentor",
-          text: "AI error. Try again.",
-          time: now,
-        },
+        { type: "bot", sender: "Bot", text: "AI error. Try again.", time: now, suggestions: [] },
       ]);
     } finally {
       setIsTyping(false);
     }
   };
 
+  /* ── SEND FROM INPUT BAR ── */
+
+  const handleSend = async () => {
+    const trimmed = message.trim();
+    if (!trimmed) return;
+    setMessage("");
+    await sendMessage(trimmed);
+  };
+
+  /* ── SEND FROM SUGGESTION CHIP ── */
+
+  const handleSuggestionTap = async (suggestion) => {
+    await sendMessage(suggestion);
+  };
+
+  /* ── FEEDBACK ── */
+
   const handleFeedbackSubmit = async (conversationId) => {
     const current = feedbackState[conversationId];
     if (!current?.rating) return;
 
     await submitFeedback(conversationId, {
-      worked: current.rating >= 3,
-      rating: current.rating,
-      comment: current.comment,
+      worked:        current.rating >= 3,
+      rating:        current.rating,
+      feedback_text: current.comment,
     });
 
     setFeedbackState((prev) => ({
@@ -232,6 +258,34 @@ export default function Assistant() {
       [conversationId]: { ...current, submitted: true },
     }));
   };
+
+  /* ── VOICE INPUT ── */
+
+  const toggleRecording = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Speech recognition not supported");
+      return;
+    }
+
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+      return;
+    }
+
+    recognitionRef.current = new SpeechRecognition();
+    recognitionRef.current.lang = langMap[language];
+    recognitionRef.current.onresult = (event) => {
+      setMessage(event.results[0][0].transcript);
+    };
+    recognitionRef.current.start();
+    setIsRecording(true);
+  };
+
+  /* ── RENDER ── */
 
   return (
     <div className={`assistant-layout ${sidebarOpen ? "" : "collapsed"}`}>
@@ -248,9 +302,7 @@ export default function Assistant() {
           {sessions.map((session) => (
             <div
               key={session.id}
-              className={`session-item ${
-                session.id === activeSessionId ? "active" : ""
-              }`}
+              className={`session-item ${session.id === activeSessionId ? "active" : ""}`}
               onClick={() => openSession(session.id)}
             >
               <span className="session-title">{session.title}</span>
@@ -291,10 +343,27 @@ export default function Assistant() {
                 <option key={lang}>{lang}</option>
               ))}
             </select>
+
+            <button className="nav-btn active">💬 Assistant</button>
+
+            <button className="nav-btn" onClick={() => navigate("/profile")}>
+              👤 Profile
+            </button>
+            <button className="nav-btn" onClick={() => navigate("/quiz")}>
+              📝 Quiz
+            </button>
+            <button className="nav-btn" onClick={() => navigate("/behaviour-coach")}>
+              🧠 Coach
+            </button>
+            <button className="nav-btn" onClick={() => navigate("/library")}>
+              📚 Library
+            </button>
+
             <div className="user-name">{name}</div>
           </div>
         </header>
 
+        {/* CHAT AREA */}
         <div className="scrollable-content">
           <div className="assistant-header">
             <div>✨</div>
@@ -303,55 +372,72 @@ export default function Assistant() {
               <p>Your feedback helps personalize future suggestions.</p>
             </div>
           </div>
-          
-          {chatHistory.length === 1 && (
-            <div className="topics">
-              {[
-                "How can I manage a large classroom effectively?",
-                "What are some effective teaching methods for mixed-ability classes?",
-                "How do I keep students engaged when resources are limited?",
-                "How should I handle disruptive student behavior?",
-                "Can you help me create an engaging lesson plan?",
-                "How can I manage my teaching time more effectively?",
-              ].map((q, i) => (
-                <div
-                  key={i}
-                  className="topic"
-                  onClick={() => setMessage(q)}
-                >
-                  <h4>{q.split("?")[0]}</h4>
-                  <p>{q}</p>
-                </div>
-              ))}
-            </div>
-          )}
 
           <div className="chat-area">
             <div className="chat">
+
               {chatHistory.map((msg, index) => (
                 <div key={index} className="chat-block">
-                  <div className={msg.type === "bot" ? "bot-msg" : "user-msg"}>
-                    {msg.text}
+
+                  {/* MESSAGE BUBBLE */}
+                  <div className="message-wrapper">
+                    <div className={msg.type === "bot" ? "bot-msg" : "user-msg"}>
+                    {msg.type === "bot"
+                      ? msg.text.split('\n').map((line, i) => (
+                          <span key={i}>
+                            {line}
+                            {i < msg.text.split('\n').length - 1 && <br />}
+                          </span>
+                        ))
+                      : msg.text}
                   </div>
+                  </div>
+                  {msg.type === "bot" && msg.text && (
+                      <div className="message-actions">
+                        <SaveButton
+                          content={msg.text}
+                          defaultTitle={chatHistory[index - 1]?.text?.slice(0, 50) || "AI Response"}
+                          source="assistant"
+                        />
+                      </div>
+                    )}
 
                   <small>
                     <strong>{msg.sender}</strong> · {msg.time}
                   </small>
 
+                  {/* SUGGESTION CHIPS — only on bot messages with suggestions */}
+                  {msg.type === "bot" &&
+                    msg.suggestions?.length > 0 && (
+                      <div className="suggestion-chips">
+                        {msg.suggestions.map((s, i) => (
+                          <button
+                            key={i}
+                            className="suggestion-chip"
+                            onClick={() => handleSuggestionTap(s)}
+                            disabled={isTyping}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                  {/* FEEDBACK CARD — only on bot messages with a conversationId */}
                   {msg.type === "bot" && msg.conversationId && (
                     <div className="feedback-card">
                       {feedbackState[msg.conversationId]?.submitted ? (
                         <div className="feedback-success">
-                          ✅ Thanks! I’ll adapt.
+                          ✅ Thanks for your feedback!
                         </div>
                       ) : (
                         <>
                           <div className="feedback-question">
-                            Rate this suggestion:
+                            Rate this response:
                           </div>
 
                           <div className="rating-buttons">
-                            {[1,2,3,4,5].map((n) => (
+                            {[1, 2, 3, 4, 5].map((n) => (
                               <button
                                 key={n}
                                 className={`rating-btn ${
@@ -376,9 +462,7 @@ export default function Assistant() {
 
                           <textarea
                             placeholder="Optional comment"
-                            value={
-                              feedbackState[msg.conversationId]?.comment || ""
-                            }
+                            value={feedbackState[msg.conversationId]?.comment || ""}
                             onChange={(e) =>
                               setFeedbackState((prev) => ({
                                 ...prev,
@@ -392,9 +476,7 @@ export default function Assistant() {
 
                           <button
                             className="submit-feedback-btn"
-                            onClick={() =>
-                              handleFeedbackSubmit(msg.conversationId)
-                            }
+                            onClick={() => handleFeedbackSubmit(msg.conversationId)}
                           >
                             Submit
                           </button>
@@ -402,18 +484,18 @@ export default function Assistant() {
                       )}
                     </div>
                   )}
+
                 </div>
               ))}
 
-              {isTyping && (
-                <div className="bot-msg">Analyzing classroom context...</div>
-              )}
+              {isTyping && <div className="bot-msg typing-indicator">Typing…</div>}
 
               <div ref={chatEndRef} />
             </div>
           </div>
         </div>
 
+        {/* INPUT BAR */}
         <div className="chat-input">
           <input
             placeholder="Describe your classroom situation..."
@@ -421,8 +503,26 @@ export default function Assistant() {
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSend()}
           />
-          <button className="send" onClick={handleSend}>
+
+          <button
+            className={`mic ${isRecording ? "recording" : ""}`}
+            onClick={toggleRecording}
+          >
+            🎤
+          </button>
+
+          <button className="send" onClick={handleSend} disabled={isTyping}>
             ➤
+          </button>
+
+          <button
+            className="nav-btn"
+            onClick={() => {
+              localStorage.clear();
+              navigate("/login");
+            }}
+          >
+            🚪
           </button>
         </div>
       </div>

@@ -170,3 +170,125 @@
   color: #ef4444;
   text-align: center;
 }
+
+/* ── CHART CARD ── */
+
+.chart-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chart-card-header h3 { margin: 0 0 2px; }
+
+.chart-latest {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.chart-latest-val {
+  font-size: 28px;
+  font-weight: 700;
+  color: #4f46e5;
+  line-height: 1;
+}
+
+.chart-latest-label {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.chart-trend {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── LOADING ── */
+.chart-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 32px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.chart-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── CHART CANVAS WRAPPER ── */
+.chart-wrap {
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+/* ── WEEKLY TABLE ── */
+.chart-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.chart-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.chart-table th {
+  background: #f9fafb;
+  padding: 10px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.chart-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.chart-table tr:last-child td { border-bottom: none; }
+
+.chart-table tr.latest-row td {
+  background: #f5f3ff;
+  font-weight: 500;
+}
+
+.chart-stars {
+  color: #f59e0b;
+  letter-spacing: 1px;
+  margin-right: 6px;
+  font-size: 12px;
+}
+
+.chart-avg-val {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* ── EMPTY STATE ── */
+.chart-empty {
+  padding: 32px 0;
+  text-align: center;
+}
+
+.chart-empty p { margin: 0 0 4px; font-size: 14px; color: #374151; }

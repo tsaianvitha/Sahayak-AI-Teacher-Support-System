@@ -51,14 +51,19 @@ export const submitFeedback = async (conversationId, payload) => {
 
 // ---------------- ASK AI ----------------
 // ✅ Parameter order matches Assistant.jsx: askAI(grade, subject, userMessage, language)
-export const askAI = async (grade, subject, question, language, chat_id = null) => {
-  const payload = { grade, subject, question, language };
+export const askAI = async (
+  grade, subject, question, language, chat_id = null,
+  experience = "", challenges = "", location = ""
+) => {
+  const payload = {
+    grade, subject, question, language,
+    experience, challenges, location,
+  };
   if (chat_id) payload.chat_id = chat_id;
 
   const res = await api.post("/ask", payload);
   return res.data;
 };
-
 export const deleteChat = async (chatId) => {
   return await api.delete(`/chats/${chatId}`);
 };
@@ -66,5 +71,51 @@ export const deleteChat = async (chatId) => {
 export const updateChatTitle = async (chatId, title) => {
   return await api.post(`/chats/${chatId}/title`, { title });
 };
+export const getBehaviourPlan = async ({ problem, grade, subject, experience, language }) => {
+  const res = await api.post("/behaviour-coach", {
+    problem, grade, subject, experience, language,
+  });
+  return res.data;
+};
+export const generateQuiz = async ({ grade, subject, topic, numQuestions, language }) => {
+  const res = await api.post("/quiz", {
+    grade,
+    subject,
+    topic,
+    num_questions: numQuestions,
+    language,
+  });
+  return res.data;
+};
 
+// ── SAVED RESOURCES ──────────────────────────────
+
+export const saveResource = async ({ title, content, tag, subject, grade, source }) => {
+  const res = await api.post("/resources", { title, content, tag, subject, grade, source });
+  return res.data;
+};
+
+export const getResources = async ({ tag, subject, search } = {}) => {
+  const params = {};
+  if (tag)     params.tag     = tag;
+  if (subject) params.subject = subject;
+  if (search)  params.search  = search;
+  const res = await api.get("/resources", { params });
+  return res.data;
+};
+
+export const deleteResource = async (id) => {
+  const res = await api.delete(`/resources/${id}`);
+  return res.data;
+};
+
+export const getResourceSubjects = async () => {
+  const res = await api.get("/resources/subjects");
+  return res.data;
+};
+
+export const getRatingTrends = async () => {
+  const res = await api.get("/stats/ratings");
+  return res.data;
+};
 export default api;
